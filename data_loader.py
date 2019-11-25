@@ -1,10 +1,11 @@
 import numpy as np
 import csv
 import cv2
+import os
 
 emotions = ['angry', 'disgust', 'scared', 'happy', 'sad', 'surprised', 'neutral']
 
-def load_fer2013(filepath):
+def load_fer2013(filepath, counts=(28709, 3589, 3589)):
     reader = csv.reader(open(filepath))
     # skip header
     next(reader)
@@ -16,30 +17,27 @@ def load_fer2013(filepath):
     for row in reader:
         emotion = int(row[0])
         image = np.fromstring(row[1], dtype=np.dtype('float64'), sep=' ').reshape((48, 48))
-        if row[2] == 'Training':
+        image = np.stack((image,)*3, axis=-1)
+        if row[2] == 'Training' and len(training) < counts[0]:
             training.append((emotion, image))
-        elif row[2] == 'PublicTest':
+        elif row[2] == 'PublicTest' and len(publicTest) < counts[1]:
             publicTest.append((emotion, image))
-        elif row[2] == 'PrivateTest':
+        elif row[2] == 'PrivateTest' and len(privateTest) < counts[2]:
             privateTest.append((emotion, image))
+        if len(training) == counts[0] and len(publicTest) == counts[1] and len(privateTest) == counts[2]:
+            break
 
     return training, publicTest, privateTest
 
-def preprocessData(dataset):
-    labels, images = zip(*dataset)
-    resized = []
-    for image in images:
-        image = np.stack((image,)*3, axis=-1)
-        image = cv2.resize(image, (224, 224))
-        resized.append(image)
-    return labels, resized
+def saveDatasetAsImages(dataset, outputDir):
+    counts = np.zeros(7, dtype=int)
+    for label, image in dataset:
+        filename = '{}_{}.png'.format(emotions[label], counts[label])
+        cv2.imwrite(os.path.join(outputDir, emotions[label], filename), image)
+        counts[label] = counts[label] + 1
 
 if __name__ == '__main__':
-    training, _, _ = load_fer2013('fer2013/fer2013.csv')
-    labels, images = preprocessData(training[0:10])
-    for lb, im in zip(labels, images):
-        cv2.imshow(emotions[lb], im/255)
-        k = cv2.waitKey()
-        cv2.destroyWindow(emotions[lb])
-        if k == 27 or k == ord('q'):
-            break
+    training, publicTest, privateTest = load_fer2013('fer2013/fer2013.csv')
+    saveDatasetAsImages(training, 'fer2013/Training')
+    saveDatasetAsImages(publicTest, 'fer2013/PublicTest')
+    saveDatasetAsImages(privateTest, 'fer2013/PrivateTest')
