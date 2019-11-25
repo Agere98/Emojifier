@@ -157,3 +157,6 @@ fer2013/
 
 # Saved models
 models/
+
+# Logs for TensorBoard
+logs/

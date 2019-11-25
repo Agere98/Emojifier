@@ -1,7 +1,7 @@
 from keras.models import Model, load_model
 from keras.layers import Flatten, Dense, Input
 from keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras_vggface.vggface import VGGFace
 import numpy as np
 import argparse
@@ -17,7 +17,7 @@ parser.add_argument('--save_best', help='if specified, the current best model is
 parser.add_argument('-v', '--verbose', help='set verbosity mode', action='count', default=0)
 args = parser.parse_args()
 
-def train(model, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None):
+def train(model, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None, log_dir=None):
 
     if verbosity > 0:
         print('Preparing training data...')
@@ -53,11 +53,14 @@ def train(model, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None):
         classes=emotions,
         interpolation='bilinear')
 
-    callbacks = None
+    callbacks = []
     if checkpoint_dir:
         filepath = os.path.join(checkpoint_dir, 'best_{epoch:02d}-{val_accuracy:.2f}.h5')
         checkpoint = ModelCheckpoint(filepath, monitor='val_accuracy', save_best_only=True, mode='max')
-        callbacks = [checkpoint]
+        callbacks.append(checkpoint)
+    if log_dir:
+        tensorboard = TensorBoard(log_dir=log_dir, write_graph=True, update_freq=1000)
+        callbacks.append(tensorboard)
 
     if verbosity > 0:
         print('Starting training...')
@@ -97,13 +100,15 @@ def main():
         print('Outputs: {}'.format(model.outputs))
     modelDir = os.path.join('models', args.name)
     os.makedirs(modelDir, exist_ok=True)
+    logDir = os.path.join('logs', args.name)
+    os.makedirs(logDir, exist_ok=True)
     checkpointDir = None
     if args.save_best:
         checkpointDir = modelDir
     if verbosity > 0:
         print('Model initialized.')
 
-    model = train(model, args.num_epochs, args.batch_size, verbosity=verbosity, checkpoint_dir=checkpointDir)
+    model = train(model, args.num_epochs, args.batch_size, verbosity=verbosity, checkpoint_dir=checkpointDir, log_dir=logDir)
 
     if verbosity > 0:
         print('Training completed. Saving model...')
