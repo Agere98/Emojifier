@@ -24,9 +24,6 @@ def train(model, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None, 
 
     trainDatagen = ImageDataGenerator(
         featurewise_center=True,
-        rotation_range=15,
-        width_shift_range=0.2,
-        height_shift_range=0.1,
         horizontal_flip=True)
     
     sample, _, _ = load_fer2013(os.path.join(ferDirectory, 'fer2013.csv'), counts=(1000, 0, 0))
