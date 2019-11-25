@@ -11,9 +11,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('name', help='name under which the model will be saved')
 parser.add_argument('--num_epochs', help='number of epochs to train the model', type=int, default=1)
 parser.add_argument('--batch_size', help='batch size', type=int, default=32)
+parser.add_argument('-v', '--verbose', help='set verbosity mode', action='count', default=0)
 args = parser.parse_args()
 
-def train(model, num_epochs=1, batch_size=32):
+def train(model, num_epochs=1, batch_size=32, verbosity=0):
+
+    if verbosity > 0:
+        print('Preparing training data...')
 
     trainDatagen = ImageDataGenerator(
         featurewise_center=True,
@@ -45,13 +49,16 @@ def train(model, num_epochs=1, batch_size=32):
         class_mode='categorical',
         classes=emotions,
         interpolation='bilinear')
+
+    if verbosity > 0:
+        print('Starting training...')
     
     model.fit_generator(
         train_generator,
         epochs=num_epochs,
         validation_data=validation_generator,
         validation_steps=len(validation_generator),
-        verbose=1)
+        verbose=verbosity)
         
     return model
 
@@ -65,15 +72,28 @@ def getCleanModel():
 
 def main():
     global args
+    clip = lambda x, l, u: l if x < l else u if x > u else x
+    verbosity = clip(args.verbose, 0, 2)
+
+    if verbosity > 0:
+        print('Initializing model...')
     model = getCleanModel()
-    print('Inputs: {}'.format(model.inputs))
-    print('Outputs: {}'.format(model.outputs))
+    if verbosity > 0:
+        print('Inputs: {}'.format(model.inputs))
+        print('Outputs: {}'.format(model.outputs))
     modelDir = os.path.join('models', args.name)
     os.makedirs(modelDir, exist_ok=True)
-    model.save(os.path.join(modelDir, '{}.h5'.format(args.name)))
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    model = train(model, args.num_epochs, args.batch_size)
+    if verbosity > 0:
+        print('Model initialized.')
+
+    model = train(model, args.num_epochs, args.batch_size, verbosity=verbosity)
+
+    if verbosity > 0:
+        print('Training completed. Saving model...')
     model.save(os.path.join(modelDir, '{}.h5'.format(args.name)))
+    if verbosity > 0:
+        print('Model saved.')
 
 if __name__ == '__main__':
     main()
