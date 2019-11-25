@@ -4,6 +4,7 @@ import cv2
 import os
 
 emotions = ['angry', 'disgust', 'scared', 'happy', 'sad', 'surprised', 'neutral']
+ferDirectory = 'fer2013'
 
 def load_fer2013(filepath, counts=(28709, 3589, 3589)):
     reader = csv.reader(open(filepath))
@@ -37,7 +38,7 @@ def saveDatasetAsImages(dataset, outputDir):
         counts[label] = counts[label] + 1
 
 if __name__ == '__main__':
-    training, publicTest, privateTest = load_fer2013('fer2013/fer2013.csv')
-    saveDatasetAsImages(training, 'fer2013/Training')
-    saveDatasetAsImages(publicTest, 'fer2013/PublicTest')
-    saveDatasetAsImages(privateTest, 'fer2013/PrivateTest')
+    training, publicTest, privateTest = load_fer2013(os.path.join(ferDirectory, 'fer2013.csv'))
+    saveDatasetAsImages(training, os.path.join(ferDirectory, 'Training'))
+    saveDatasetAsImages(publicTest, os.path.join(ferDirectory, 'PublicTest'))
+    saveDatasetAsImages(privateTest, os.path.join(ferDirectory, 'PrivateTest'))
