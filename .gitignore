@@ -1,5 +1,5 @@
 # Dataset images
-fer2013/*/
+fer2013/
 
 # Saved models
 *.h5
