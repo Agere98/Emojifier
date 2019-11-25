@@ -1,6 +1,7 @@
 from keras.models import Model, load_model
 from keras.layers import Flatten, Dense, Input
 from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import ModelCheckpoint
 from keras_vggface.vggface import VGGFace
 import numpy as np
 import argparse
@@ -11,10 +12,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('name', help='name under which the model will be saved')
 parser.add_argument('--num_epochs', help='number of epochs to train the model', type=int, default=1)
 parser.add_argument('--batch_size', help='batch size', type=int, default=32)
+parser.add_argument('--load', help='filepath to an already trained model to initialize the neural network before training', dest='filepath')
+parser.add_argument('--save_best', help='if specified, the current best model is saved to a separate file', action='store_true')
 parser.add_argument('-v', '--verbose', help='set verbosity mode', action='count', default=0)
 args = parser.parse_args()
 
-def train(model, num_epochs=1, batch_size=32, verbosity=0):
+def train(model, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None):
 
     if verbosity > 0:
         print('Preparing training data...')
@@ -50,6 +53,12 @@ def train(model, num_epochs=1, batch_size=32, verbosity=0):
         classes=emotions,
         interpolation='bilinear')
 
+    callbacks = None
+    if checkpoint_dir:
+        filepath = os.path.join(checkpoint_dir, 'best_{epoch:02d}-{val_accuracy:.2f}.h5')
+        checkpoint = ModelCheckpoint(filepath, monitor='val_accuracy', save_best_only=True, mode='max')
+        callbacks = [checkpoint]
+
     if verbosity > 0:
         print('Starting training...')
     
@@ -58,7 +67,8 @@ def train(model, num_epochs=1, batch_size=32, verbosity=0):
         epochs=num_epochs,
         validation_data=validation_generator,
         validation_steps=len(validation_generator),
-        verbose=verbosity)
+        verbose=verbosity,
+        callbacks=callbacks)
         
     return model
 
@@ -77,17 +87,23 @@ def main():
 
     if verbosity > 0:
         print('Initializing model...')
-    model = getCleanModel()
+    if args.filepath == None:
+        model = getCleanModel()
+        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    else:
+        model = load_model(filepath)
     if verbosity > 0:
         print('Inputs: {}'.format(model.inputs))
         print('Outputs: {}'.format(model.outputs))
     modelDir = os.path.join('models', args.name)
     os.makedirs(modelDir, exist_ok=True)
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    checkpointDir = None
+    if args.save_best:
+        checkpointDir = modelDir
     if verbosity > 0:
         print('Model initialized.')
 
-    model = train(model, args.num_epochs, args.batch_size, verbosity=verbosity)
+    model = train(model, args.num_epochs, args.batch_size, verbosity=verbosity, checkpoint_dir=checkpointDir)
 
     if verbosity > 0:
         print('Training completed. Saving model...')
