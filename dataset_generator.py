@@ -51,7 +51,7 @@ def filterFaces(sourceDir, destinationDir):
 
 def main():
     global args
-    chromeDriverDir = '..'
+    chromeDriverDir = os.path.join('..', 'chromedriver.exe')
     outputDir = args.output_dir if args.output_dir is not None else 'dataset'
     queryLimit = args.query_limit if args.query_limit is not None else 1000
 

@@ -154,7 +154,6 @@ $RECYCLE.BIN/
 
 # Dataset images
 dataset/
-fer2013/
 
 # Saved models
 models/

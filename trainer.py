@@ -1,23 +1,27 @@
-from keras.models import Model, load_model
-from keras.layers import Flatten, Dense, Input
-from keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import ModelCheckpoint, TensorBoard
-from keras_vggface.vggface import VGGFace
-import numpy as np
 import argparse
-import os
-from data_loader import load_fer2013, emotions, ferDirectory
 
 parser = argparse.ArgumentParser()
 parser.add_argument('name', help='name under which the model will be saved')
 parser.add_argument('--num_epochs', help='number of epochs to train the model', type=int, default=1)
 parser.add_argument('--batch_size', help='batch size', type=int, default=32)
 parser.add_argument('--load', help='filepath to an already trained model to initialize the neural network before training', dest='filepath')
-parser.add_argument('--save_best', help='if specified, the current best model is saved to a separate file', action='store_true')
+parser.add_argument('-d', '--dataset', help='root directory of a training dataset', default='dataset')
+parser.add_argument('-s', '--save_best', help='if specified, the current best model is saved to a separate file', action='store_true')
 parser.add_argument('-v', '--verbose', help='set verbosity mode', action='count', default=0)
 args = parser.parse_args()
 
-def train(model, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None, log_dir=None):
+from keras.models import Model, load_model
+from keras.layers import Flatten, Dense, Input
+from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras_vggface.vggface import VGGFace
+import numpy as np
+import cv2
+import os
+
+emotions = ['angry', 'disgust', 'scared', 'happy', 'sad', 'surprised', 'neutral']
+
+def train(model, datasetDir, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None, log_dir=None):
 
     if verbosity > 0:
         print('Preparing training data...')
@@ -26,16 +30,14 @@ def train(model, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None, 
         featurewise_center=True,
         horizontal_flip=True)
     
-    sample, _, _ = load_fer2013(os.path.join(ferDirectory, 'fer2013.csv'), counts=(1000, 0, 0))
-    _, sample = zip(*sample)
-    sample = np.array(sample)
+    sample = getSample(100, datasetDir)
     trainDatagen.fit(sample)
 
     validationDatagen = ImageDataGenerator(
         horizontal_flip=True)
 
     train_generator = trainDatagen.flow_from_directory( 
-        os.path.join(ferDirectory, 'Training'), 
+        os.path.join(datasetDir, 'training'), 
         target_size=(224, 224), 
         batch_size=batch_size, 
         class_mode='categorical',
@@ -43,7 +45,7 @@ def train(model, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None, 
         interpolation='bilinear')
 
     validation_generator = validationDatagen.flow_from_directory(
-        os.path.join(ferDirectory, 'PublicTest'), 
+        os.path.join(datasetDir, 'validation'), 
         target_size=(224, 224), 
         batch_size=batch_size, 
         class_mode='categorical',
@@ -52,8 +54,8 @@ def train(model, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None, 
 
     callbacks = []
     if checkpoint_dir:
-        filepath = os.path.join(checkpoint_dir, 'best_{epoch:02d}-{val_accuracy:.2f}.h5')
-        checkpoint = ModelCheckpoint(filepath, monitor='val_accuracy', save_best_only=True, mode='max')
+        filepath = os.path.join(checkpoint_dir, 'best_{epoch:02d}.h5')
+        checkpoint = ModelCheckpoint(filepath, monitor='val_acc', save_best_only=True, mode='max')
         callbacks.append(checkpoint)
     if log_dir:
         tensorboard = TensorBoard(log_dir=log_dir, write_graph=True, update_freq=1000)
@@ -65,12 +67,30 @@ def train(model, num_epochs=1, batch_size=32, verbosity=0, checkpoint_dir=None, 
     model.fit_generator(
         train_generator,
         epochs=num_epochs,
+        steps_per_epoch=len(train_generator),
         validation_data=validation_generator,
         validation_steps=len(validation_generator),
         verbose=verbosity,
         callbacks=callbacks)
         
     return model
+
+def getSample(classCount, datasetDir, subset='training'):
+    datasetDir = os.path.join(datasetDir, subset)
+    sample = []
+    for emotion in emotions:
+        path = os.path.join(datasetDir, emotion)
+        if os.path.exists(path):
+            count = 0
+            for filename in os.listdir(path):
+                image = cv2.imread(os.path.join(path, filename))
+                if image is None or image.size == 0:
+                    continue
+                sample.append(image)
+                count += 1
+                if count == classCount:
+                    break
+    return sample
 
 def getCleanModel():
     nb_class = 7
@@ -105,7 +125,8 @@ def main():
     if verbosity > 0:
         print('Model initialized.')
 
-    model = train(model, args.num_epochs, args.batch_size, verbosity=verbosity, checkpoint_dir=checkpointDir, log_dir=logDir)
+    model = train(model, args.dataset, args.num_epochs, args.batch_size, verbosity=verbosity, 
+        checkpoint_dir=checkpointDir, log_dir=logDir)
 
     if verbosity > 0:
         print('Training completed. Saving model...')
