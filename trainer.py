@@ -6,8 +6,9 @@ parser.add_argument('--num_epochs', help='number of epochs to train the model', 
 parser.add_argument('--batch_size', help='batch size', type=int, default=32)
 parser.add_argument('--load', help='filepath to an already trained model to initialize the neural network before training', dest='filepath')
 parser.add_argument('-d', '--dataset', help='root directory of a training dataset', default='dataset')
-parser.add_argument('-s', '--save_best', help='if specified, the current best model is saved to a separate file', action='store_true')
+parser.add_argument('-b', '--save_best', help='if specified, the current best model is saved to a separate file', action='store_true')
 parser.add_argument('-v', '--verbose', help='set verbosity mode', action='count', default=0)
+parser.add_argument('-s', '--summary', help='show model summary and exit', action='store_true')
 args = parser.parse_args()
 
 from keras.models import Model, load_model
@@ -95,10 +96,14 @@ def getSample(classCount, datasetDir, subset='training'):
 def getCleanModel():
     nb_class = 7
     vgg_model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3))
+    for layer in vgg_model.layers[:-5]:
+        layer.trainable = False
     last_layer = vgg_model.get_layer('avg_pool').output
     x = Flatten(name='flatten')(last_layer)
+    x = Dense(2*nb_class, activation='relu', name='dense')(x)
     out = Dense(nb_class, activation='softmax', name='classifier')(x)
-    return Model(vgg_model.input, out)
+    model = Model(vgg_model.input, out)
+    return model
 
 def main():
     global args
@@ -115,6 +120,9 @@ def main():
     if verbosity > 0:
         print('Inputs: {}'.format(model.inputs))
         print('Outputs: {}'.format(model.outputs))
+    if args.summary:
+        model.summary()
+        exit()
     modelDir = os.path.join('models', args.name)
     os.makedirs(modelDir, exist_ok=True)
     logDir = os.path.join('logs', args.name)
