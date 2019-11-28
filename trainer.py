@@ -38,7 +38,6 @@ def train(model, datasetDir, num_epochs=1, batch_size=32, verbosity=0, checkpoin
         featurewise_center=True,
         horizontal_flip=True)
     
-    sample = getSample(100, datasetDir, subset='validation')
     validationDatagen.fit(sample)
 
     train_generator = trainDatagen.flow_from_directory( 
