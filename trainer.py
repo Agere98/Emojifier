@@ -99,7 +99,7 @@ def getSample(classCount, datasetDir, subset='training'):
 def getCleanModel():
     nb_class = 7
     vgg_model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3))
-    for layer in vgg_model.layers[:-5]:
+    for layer in vgg_model.layers[:-11]:
         layer.trainable = False
     last_layer = vgg_model.get_layer('avg_pool').output
     x = Flatten(name='flatten')(last_layer)
