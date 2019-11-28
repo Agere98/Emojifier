@@ -12,7 +12,7 @@ parser.add_argument('-s', '--summary', help='show model summary and exit', actio
 args = parser.parse_args()
 
 from keras.models import Model, load_model
-from keras.layers import Flatten, Dense, Input
+from keras.layers import Flatten, Dense, Dropout, Input
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras_vggface.vggface import VGGFace
@@ -103,7 +103,9 @@ def getCleanModel():
         layer.trainable = False
     last_layer = vgg_model.get_layer('avg_pool').output
     x = Flatten(name='flatten')(last_layer)
+    x = Dropout(0.4)(x)
     x = Dense(2*nb_class, activation='relu', name='dense')(x)
+    x = Dropout(0.4)(x)
     out = Dense(nb_class, activation='softmax', name='classifier')(x)
     model = Model(vgg_model.input, out)
     return model
