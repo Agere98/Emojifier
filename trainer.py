@@ -29,7 +29,13 @@ def train(model, datasetDir, num_epochs=1, batch_size=32, verbosity=0, checkpoin
 
     trainDatagen = ImageDataGenerator(
         featurewise_center=True,
-        horizontal_flip=True)
+        horizontal_flip=True,
+        rotation_range=35,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        brightness_range=(0.4, 1.5),
+        zoom_range=0.05,
+        fill_mode='nearest')
     
     sample = getSample(100, datasetDir)
     trainDatagen.fit(sample)
@@ -103,9 +109,8 @@ def getCleanModel():
         layer.trainable = False
     last_layer = vgg_model.get_layer('avg_pool').output
     x = Flatten(name='flatten')(last_layer)
-    x = Dropout(0.4)(x)
-    x = Dense(2*nb_class, activation='relu', name='dense')(x)
-    x = Dropout(0.4)(x)
+    x = Dropout(0.5)(x)
+    x = Dense(256, activation='relu', name='dense')(x)
     out = Dense(nb_class, activation='softmax', name='classifier')(x)
     model = Model(vgg_model.input, out)
     return model
