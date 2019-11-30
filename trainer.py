@@ -1,15 +1,16 @@
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument('name', help='name under which the model will be saved')
-parser.add_argument('--num_epochs', help='number of epochs to train the model', type=int, default=1)
-parser.add_argument('--batch_size', help='batch size', type=int, default=32)
-parser.add_argument('--load', help='filepath to an already trained model to initialize the neural network before training', dest='filepath')
-parser.add_argument('-d', '--dataset', help='root directory of a training dataset', default='dataset')
-parser.add_argument('-b', '--save_best', help='if specified, the current best model is saved to a separate file', action='store_true')
-parser.add_argument('-v', '--verbose', help='set verbosity mode', action='count', default=0)
-parser.add_argument('-s', '--summary', help='show model summary and exit', action='store_true')
-args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('name', help='name under which the model will be saved')
+    parser.add_argument('--num_epochs', help='number of epochs to train the model', type=int, default=1)
+    parser.add_argument('--batch_size', help='batch size', type=int, default=32)
+    parser.add_argument('--load', help='filepath to an already trained model to initialize the neural network before training', dest='filepath')
+    parser.add_argument('-d', '--dataset', help='root directory of a training dataset', default='dataset')
+    parser.add_argument('-b', '--save_best', help='if specified, the current best model is saved to a separate file', action='store_true')
+    parser.add_argument('-v', '--verbose', help='set verbosity mode', action='count', default=0)
+    parser.add_argument('-s', '--summary', help='show model summary and exit', action='store_true')
+    args = parser.parse_args()
 
 from keras.models import Model, load_model
 from keras.layers import Flatten, Dense, Dropout, Input
@@ -45,6 +46,9 @@ def train(model, datasetDir, num_epochs=1, batch_size=32, verbosity=0, checkpoin
         horizontal_flip=True)
     
     validationDatagen.fit(sample)
+
+    if verbosity > 0:
+        print('Mean values for preprocessing: {}'.format(validationDatagen.mean))
 
     train_generator = trainDatagen.flow_from_directory( 
         os.path.join(datasetDir, 'training'), 
