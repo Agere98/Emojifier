@@ -15,8 +15,11 @@ from trainer import emotions
 
 emojis = {emotion: [] for emotion in emotions}
 
-def process(image, classifier):
-    face = extractFace(image)
+def process(image, classifier, extract_face=True):
+    if extract_face:
+        face = extractFace(image)
+    else:
+        face = image
     if face is not None:
         x = face.astype('float64')
         x[..., 0] -= 110.157036
