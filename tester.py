@@ -1,9 +1,8 @@
-from keras.models import Model, load_model
-from keras.layers import Flatten, Dense, Dropout, Input
+from keras.models import load_model
 from keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import ModelCheckpoint, TensorBoard
-from keras_vggface.vggface import VGGFace
 from face_extractor import extractFace
+from trainer import getSample
+from emojifier import process
 import numpy as np
 import cv2
 import os
@@ -25,15 +24,9 @@ if __name__ == "__main__":
 def test_model(model, datasetDir=args.dataset, batch_size=args.batch_size):
 
     evaluateDatagen = ImageDataGenerator(
-        featurewise_center=True,
-        horizontal_flip=True,
-        rotation_range=35,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        brightness_range=(0.4, 1.5),
-        zoom_range=0.05,
-        fill_mode='nearest')
-
+        featurewise_center=True)
+    sample = getSample(100, os.path.join(datasetDir, 'training'))
+    evaluateDatagen.fit(sample)
     path = os.path.join(datasetDir, 'validation')
     if os.path.exists(path):
         test_generator = evaluateDatagen.flow_from_directory(
@@ -51,24 +44,14 @@ def test_model(model, datasetDir=args.dataset, batch_size=args.batch_size):
         print('problem')
 
 
-def process(image, model):
-    face = extractFace(image)
-    if face is not None:
-        x = face.astype('float64')
-        x[..., 0] -= 110.157036
-        x[..., 1] -= 122.28291
-        x[..., 2] -= 122.28291
-        x = np.expand_dims(x, axis=0)
-        preds = model.predict(x)
-        return list(zip(emotions, preds[0]))
-    return []
-
-
 def predictImage(path, model):
     image = cv2.imread(path)
     preds = process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), model)
     if preds:
         preds = sorted(preds, key=lambda x: x[1], reverse=True)
+        for label, value in preds:
+            print('{:>8.4f} {}'.format(value, label))
+        print('')
         best_label, _ = preds[0]
         return best_label
     return None
