@@ -2,7 +2,7 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('model', help='filepath to a model to be loaded for evaluation')
+    parser.add_argument('-model', help='filepath to a model to be loaded for evaluation', default='model_acc.h5')
     parser.add_argument('--batch_size', help='batch size', type=int, default=32)
     parser.add_argument('-d', '--dataset', help='root directory of a training dataset', default='dataset')
     args = parser.parse_args()
@@ -15,6 +15,10 @@ from keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix
 from trainer import getSample, emotions
 from emojifier import process
+import seaborn as sn
+import pandas as pd
+import matplotlib.pyplot as plt
+
 
 def test_model(model, datasetDir=args.dataset, batch_size=args.batch_size):
 
@@ -62,14 +66,21 @@ def test_confusion_matrix(img_dir, model):
                 label_true.append(emotion)
                 label_pred.append(label)
 
-    matrix = confusion_matrix(label_true, label_pred, labels=emotions)
+    matrix = confusion_matrix(label_true, label_pred, labels=emotions, normalize='true')
     print(matrix)
+    df_cm = pd.DataFrame(matrix, index=[i for i in emotions],
+                         columns=[i for i in emotions])
+    sn.set(font_scale=1.4)  # for label size
+    sn.heatmap(df_cm, annot=True)
+    plt.show()
+    plt.imsave('matrix.jpg')
+
 
 def main():
     global args
     model = load_model(args.model)
     test_model(model)
-    test_confusion_matrix(os.path.join(args.dataset, 'validation'), model)
+    #test_confusion_matrix(os.path.join(args.dataset, 'validation'), model)
 
 if __name__ == "__main__":
     main()
