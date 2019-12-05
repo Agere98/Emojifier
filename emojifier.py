@@ -65,7 +65,6 @@ def drawBoundingBox(image, predictions=None):
     if predictions:
         label = sorted(predictions, key=lambda x: x[1], reverse=True)[0][0]
         font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(image, label, (bx, by-10), font, 0.5, (0, 128, 255), 1)
 
 def showProbabilities(predictions):
     probabilities = np.zeros((260, 336, 3), dtype="uint8")
