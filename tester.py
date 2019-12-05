@@ -2,7 +2,7 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-model', help='filepath to a model to be loaded for evaluation', default='model_acc.h5')
+    parser.add_argument('model', help='filepath to a model to be loaded for evaluation')
     parser.add_argument('--batch_size', help='batch size', type=int, default=32)
     parser.add_argument('-d', '--dataset', help='root directory of a training dataset', default='dataset')
     args = parser.parse_args()
@@ -80,7 +80,7 @@ def main():
     global args
     model = load_model(args.model)
     test_model(model)
-    #test_confusion_matrix(os.path.join(args.dataset, 'validation'), model)
+    test_confusion_matrix(os.path.join(args.dataset, 'validation'), model)
 
 if __name__ == "__main__":
     main()

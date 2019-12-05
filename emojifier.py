@@ -17,7 +17,7 @@ emojis = {emotion: [] for emotion in emotions}
 
 def process(image, classifier, extract_face=True):
     if extract_face:
-        face = extractFace(image)
+        face = extractFace(image, getCentermost=True)
     else:
         face = image
     if face is not None:
@@ -60,7 +60,7 @@ def predictRealTime(classifier):
     cv2.destroyAllWindows()
 
 def drawBoundingBox(image, predictions=None):
-    (bx, by, bw, bh) = getBoundingBox(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    (bx, by, bw, bh) = getBoundingBox(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), getCentermost=True)
     cv2.rectangle(image, (bx, by), (bx+bw, by+bh), (0, 128, 255), 2)
     if predictions:
         label = sorted(predictions, key=lambda x: x[1], reverse=True)[0][0]
