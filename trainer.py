@@ -130,7 +130,7 @@ def main():
         model = getCleanModel()
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     else:
-        model = load_model(filepath)
+        model = load_model(args.filepath)
     if verbosity > 0:
         print('Inputs: {}'.format(model.inputs))
         print('Outputs: {}'.format(model.outputs))
